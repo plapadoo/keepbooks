@@ -1,0 +1,16 @@
+compile:
+  stage: build
+  script:
+    - stack setup
+    - stack build keepbooks
+    - cp $(find -name keepbooks -type f -executable | head -n 1) .
+  artifacts:
+    paths:
+      - ./keepbooks
+
+publish:
+  stage: deploy
+  only:
+    - master
+  script:
+    - scp ./keepbooks $SSH_USER@$HOST_WWW:/root/tools/keepbooks
