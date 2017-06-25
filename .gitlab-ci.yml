@@ -13,4 +13,4 @@ publish:
   only:
     - master
   script:
-    - scp ./keepbooks $SSH_USER@$HOST_WWW:/root/tools/keepbooks
+    - scp ./keepbooks $SSH_USER@$HOST_WWW:/home/$SSH_USER/tools/keepbooks
