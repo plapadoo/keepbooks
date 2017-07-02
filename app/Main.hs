@@ -1,6 +1,7 @@
 module Main where
 
 import           Control.Exception   (IOException, catch)
+import Text.Read(Read(..),read)
 import           Control.Monad       (Monad, filterM, join, liftM, mapM, return,
                                       (>>=))
 import           Data.Bool           (Bool, otherwise)
@@ -9,16 +10,18 @@ import           Data.Foldable       (foldMap)
 import           Data.Function       (($), (.))
 import           Data.Functor        ((<$>))
 import           Data.Int            (Int)
-import           Data.List           (concatMap, length, replicate, unlines,notElem,filter)
+import           Data.List           (concatMap, filter, length, notElem,
+                                      replicate, unlines,take,drop)
 import           Data.Monoid         (Monoid (..), (<>))
-import           Data.Ord            (max, (<))
+import           Data.Ord            (max, (<),(>))
 import           Data.String         (String)
-import           Data.Time.Calendar  (Day, addGregorianMonthsClip, toGregorian)
+import           Data.Time.Calendar  (Day, toGregorian)
 import           Data.Time.Clock     (getCurrentTime, utctDay)
 import           Numeric             (showIntAtBase)
-import           Options.Applicative (Parser, execParser, fullDesc, header,
-                                      help, helper, info, long, many, metavar,
-                                      progDesc, strOption, switch, (<**>))
+import           Options.Applicative (Parser, auto, execParser, fullDesc,
+                                      header, help, helper, info, long, many,
+                                      metavar, option, progDesc, strOption,
+                                      switch, value, (<**>))
 import           PlpdMailTemplate    (printMailTemplate)
 import           Prelude             (fromIntegral, (-))
 import           System.Directory    (copyFile, createDirectory,
@@ -122,11 +125,12 @@ data CliVars = CliVars {
   , cliUser        :: String
   , cliGroup       :: String
   , cliWetRun      :: Bool
+  , cliDate        :: MonthYear
   , cliExcludeDirs :: [FilePath]
   }
 
-cliVarsParser :: Parser CliVars
-cliVarsParser =
+cliVarsParser :: MonthYear -> Parser CliVars
+cliVarsParser cmy =
   CliVars
       <$> strOption
           ( long "source-dir"
@@ -147,14 +151,18 @@ cliVarsParser =
       <*> switch
           ( long "wet-run"
           <> help "really execute the actions (opposite of dry-run)")
+      <*> option auto
+          ( long "date"
+          <> help "date in the form YYYY-MM to start with (is current month if omitted)"
+          <> value cmy)
       <*> many ( strOption
           ( long "exclude"
          <> metavar "EXCLUSION"
          <> help "Exclude the following directories from copying" ) )
 
-readCliVars :: IO CliVars
-readCliVars = execParser opts
-  where opts = info (cliVarsParser <**> helper)
+readCliVars :: MonthYear -> IO CliVars
+readCliVars cmy = execParser opts
+  where opts = info (cliVarsParser cmy <**> helper)
          ( fullDesc
          <> progDesc "Copy current month from SOURCE_DIR to TARGET_DIR, then set permissions according to USER:GROUP"
          <> header "keepbooks - plapadoo book-keeping automated" )
@@ -169,6 +177,12 @@ instance Show MonthYear where
     where pad n | n < 10 = "0" <> show n
                 | otherwise = show n
 
+instance Read MonthYear where
+  readsPrec _ s =
+    let year = read (take 4 s)
+        month = read (drop 5 s)
+    in [(MonthYear month year,drop 7 s)]
+
 dayToMonthYear :: Day -> MonthYear
 dayToMonthYear day =
   let (year,month,_) = toGregorian day
@@ -177,8 +191,9 @@ dayToMonthYear day =
 currentMonthYear :: IO MonthYear
 currentMonthYear = dayToMonthYear <$> utctDay <$> getCurrentTime
 
-lastMonthYear :: IO MonthYear
-lastMonthYear = dayToMonthYear <$> addGregorianMonthsClip (-1) <$> utctDay <$> getCurrentTime
+lastMonthYear :: MonthYear -> MonthYear
+lastMonthYear (MonthYear month year) | month > 1 = MonthYear (month-1) year
+                                     | otherwise = MonthYear 12 (year-1)
 
 dirsBelowJustName :: FilePath -> IO [FilePath]
 dirsBelowJustName dir = listDirectoryIgnoreExns dir >>= filterM (doesDirectoryExist . (dir </>))
@@ -279,8 +294,8 @@ keepBooks cliVars = do
   let source = FsSource (cliSourceDir cliVars)
       target = FsTarget (cliTargetDir cliVars)
       exclusions = cliExcludeDirs cliVars
-  cmy <- currentMonthYear
-  lmy <- lastMonthYear
+      cmy = cliDate cliVars
+      lmy = lastMonthYear cmy
   copyAndMoveOps <- copyAndMove source target exclusions cmy lmy
   if cliWetRun cliVars
     then do
@@ -298,4 +313,6 @@ keepBooks cliVars = do
       putStrLn (unlines (((" • " <>) . show) <$> copyAndMoveOps))
 
 main :: IO ()
-main = readCliVars >>= keepBooks
+main = do
+  cmy <- currentMonthYear
+  readCliVars cmy >>= keepBooks
