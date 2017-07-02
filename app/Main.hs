@@ -273,6 +273,12 @@ createDirectoryIgnoreExns fp =
       errorHandler _ = return ()
   in createDirectory fp `catch` errorHandler
 
+removeDirectoryIgnoreExns :: FilePath -> IO ()
+removeDirectoryIgnoreExns fp =
+  let errorHandler :: IOException -> IO ()
+      errorHandler _ = return ()
+  in removeDirectoryRecursive fp `catch` errorHandler
+
 interpretOperation :: FsOperation -> IO ()
 interpretOperation op = do
   print op
@@ -282,7 +288,7 @@ interpretOperation op = do
     groupIdForName name = groupID <$> getGroupEntryForName name
     interpretOperation' (FsCopy (FsSource source) (FsTarget target)) = copyFile source target
     interpretOperation' (FsMkdir (FsTarget t)) = createDirectoryIgnoreExns t
-    interpretOperation' (FsRemoveDir t) = removeDirectoryRecursive t
+    interpretOperation' (FsRemoveDir t) = removeDirectoryIgnoreExns t
     interpretOperation' (FsChown path (FsGroup groupName) (FsOwner ownerName)) = do
       user <- userIdForName ownerName
       group <- groupIdForName groupName
