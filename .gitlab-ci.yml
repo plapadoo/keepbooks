@@ -1,16 +1,9 @@
-compile:
+build:
   stage: build
   script:
-    - stack setup
-    - stack build keepbooks
-    - cp $(find -name keepbooks -type f -executable | head -n 1) .
-  artifacts:
-    paths:
-      - ./keepbooks
-
-publish:
-  stage: deploy
-  only:
-    - master
-  script:
-    - scp ./keepbooks $SSH_USER@$HOST_WWW:/home/$SSH_USER/tools/keepbooks
+    - imagefile=$(nix-build dockerimage.nix)
+    - sudo docker rmi keepbooks:latest
+    - sudo docker load < $imagefile
+    - sudo docker tag keepbooks:latest $HOST_REGISTRY/keepbooks:latest
+    - sudo docker login -u $USER_REGISTRY -p $PW_REGISTRY $HOST_REGISTRY
+    - sudo docker push $HOST_REGISTRY/keepbooks:latest
