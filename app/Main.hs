@@ -1,7 +1,6 @@
 module Main where
 
 import           Control.Exception   (IOException, catch)
-import Text.Read(Read(..),read)
 import           Control.Monad       (Monad, filterM, join, liftM, mapM, return,
                                       (>>=))
 import           Data.Bool           (Bool, otherwise)
@@ -10,10 +9,10 @@ import           Data.Foldable       (foldMap)
 import           Data.Function       (($), (.))
 import           Data.Functor        ((<$>))
 import           Data.Int            (Int)
-import           Data.List           (concatMap, filter, length, notElem,
-                                      replicate, unlines,take,drop)
+import           Data.List           (concatMap, drop, filter, length, notElem,
+                                      replicate, take, unlines)
 import           Data.Monoid         (Monoid (..), (<>))
-import           Data.Ord            (max, (<),(>))
+import           Data.Ord            (max, (<), (>))
 import           Data.String         (String)
 import           Data.Time.Calendar  (Day, toGregorian)
 import           Data.Time.Clock     (getCurrentTime, utctDay)
@@ -27,10 +26,12 @@ import           Prelude             (fromIntegral, (-))
 import           System.Directory    (copyFile, createDirectory,
                                       doesDirectoryExist, doesFileExist,
                                       listDirectory, removeDirectoryRecursive)
+import           Text.Read           (Read (..), read)
 
 import           Control.Applicative ((<*>))
 import           System.FilePath     (FilePath, (</>))
-import           System.IO           (IO, print, putStrLn)
+import           System.IO           (IO, hSetEncoding, print, putStrLn, stderr,
+                                      stdout, utf8)
 import           System.Posix.Files  (setFileMode, setOwnerAndGroup,
                                       unionFileModes)
 import qualified System.Posix.Files  as PosixFiles
@@ -320,5 +321,7 @@ keepBooks cliVars = do
 
 main :: IO ()
 main = do
+  hSetEncoding stdout utf8
+  hSetEncoding stderr utf8
   cmy <- currentMonthYear
   readCliVars cmy >>= keepBooks
