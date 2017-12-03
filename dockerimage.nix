@@ -5,5 +5,5 @@ in
   pkgs.dockerTools.buildImage {
     name = "keepbooks";
     tag = "latest";
-    contents = thisPackage;
+    contents = pkgs.haskell.lib.justStaticExecutables thisPackage;
   }
