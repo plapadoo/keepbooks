@@ -1,16 +1,12 @@
--- This file has been generated from package.yaml by hpack version 0.18.1.
---
--- see: https://github.com/sol/hpack
-
 name:           keepbooks
-version:        0.1.0.0
+version:        0.1
 synopsis:       Keep your books like a pro!
 category:       Web
 homepage:       https://github.com/plapadoo/keepbooks#readme
 bug-reports:    https://github.com/plapadoo/keepbooks/issues
 author:         Philipp Middendorf
-maintainer:     middendorf@plapadoo.de
-copyright:      plapadoo UG (haftungsbeschränkt) 2017
+maintainer:     Philipp Middendorf <middendorf@plapadoo.de>
+copyright:      plapadoo UG 2018
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
