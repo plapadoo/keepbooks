@@ -126,6 +126,7 @@ data CliVars = CliVars {
   , cliUser        :: String
   , cliGroup       :: String
   , cliWetRun      :: Bool
+  , cliNoDelete    :: Bool
   , cliDate        :: MonthYear
   , cliExcludeDirs :: [FilePath]
   }
@@ -152,6 +153,9 @@ cliVarsParser cmy =
       <*> switch
           ( long "wet-run"
           <> help "really execute the actions (opposite of dry-run)")
+      <*> switch
+          ( long "no-delete"
+          <> help "don't delete anything, just add")
       <*> option auto
           ( long "date"
           <> help "date in the form YYYY-MM to start with (is current month if omitted)"
@@ -232,9 +236,9 @@ copyNew (FsSource source) (FsTarget target) exclusions currentMy = do
            return $ mkdir : (fileOp <$> catFiles)
   concatMapM categoryOp filteredCats
 
-copyAndMove :: FsSource -> FsTarget -> [FilePath] -> MonthYear -> MonthYear -> IO [FsOperation]
-copyAndMove source target exclusions currentMy lastMy = do
-  deleteOps <- removeOld target lastMy
+copyAndMove :: Bool -> FsSource -> FsTarget -> [FilePath] -> MonthYear -> MonthYear -> IO [FsOperation]
+copyAndMove noDelete source target exclusions currentMy lastMy = do
+  deleteOps <- if noDelete then mempty else removeOld target lastMy
   copyOps <- copyNew source target exclusions currentMy
   return (copyOps <> deleteOps)
 
@@ -303,7 +307,7 @@ keepBooks cliVars = do
       exclusions = cliExcludeDirs cliVars
       cmy = cliDate cliVars
       lmy = lastMonthYear cmy
-  copyAndMoveOps <- copyAndMove source target exclusions cmy lmy
+  copyAndMoveOps <- copyAndMove (cliNoDelete cliVars) source target exclusions cmy lmy
   if cliWetRun cliVars
     then do
       putStrLn "Copying and moving documents..."
