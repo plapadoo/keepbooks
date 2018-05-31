@@ -11,8 +11,9 @@ import           Data.Functor        ((<$>))
 import           Data.Int            (Int)
 import           Data.List           (concatMap, drop, filter, length, notElem,
                                       replicate, take, unlines)
-import           Data.Monoid         (Monoid (..), (<>))
+import           Data.Monoid         (Monoid (mappend, mempty))
 import           Data.Ord            (max, (<), (>))
+import           Data.Semigroup      (Semigroup, (<>))
 import           Data.String         (String)
 import           Data.Time.Calendar  (Day, toGregorian)
 import           Data.Time.Clock     (getCurrentTime, utctDay)
@@ -74,9 +75,12 @@ instance Show FsFileMode where
   show (FsFileMode x) = pad 3 ( showIntAtBase 8 intToDigit x "" )
     where pad n s = replicate (max 0 (n - length s)) '0' <> s
 
+instance Semigroup FsFileMode where
+  (FsFileMode a) <> (FsFileMode b) = FsFileMode (a `unionFileModes` b)
+
 instance Monoid FsFileMode where
   mempty = FsFileMode PosixFiles.nullFileMode
-  (FsFileMode a) `mappend` (FsFileMode b) = FsFileMode (a `unionFileModes` b)
+  mappend = (<>)
 
 ownerReadMode :: FsFileMode
 ownerWriteMode :: FsFileMode
