@@ -1,5 +1,5 @@
-build:
-  stage: build
+build-docker:
+  stage: deploy
   script:
     - imagefile=$(nix-build dockerimage.nix)
     - docker rmi -f keepbooks:latest || true
@@ -7,3 +7,8 @@ build:
     - docker tag keepbooks:latest $HOST_REGISTRY/keepbooks:latest
     - docker login -u $USER_REGISTRY -p $PW_REGISTRY $HOST_REGISTRY
     - docker push $HOST_REGISTRY/keepbooks:latest
+
+build-arch:
+  stage: deploy
+  script:
+    - packaging/package-arch.sh

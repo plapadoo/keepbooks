@@ -1,0 +1,27 @@
+# Contributor: Philipp Middendorf <middendorf@plapadoo.de>
+pkgname=keepbooks
+pkgrel=1
+pkgver=1.0
+pkgdesc="Small, Unix-philosophy HTTP server"
+url="http://github.com/plapadoo/keepbooks"
+license=('GPL3')
+arch=('x86_64')
+makedepends=()
+depends=('ghc' 'ghc-libs' 'haskell-filepath' 'haskell-cabal' 'haskell-directory' 'haskell-time' 'haskell-unix' 'haskell-optparse-applicative')
+options=('strip')
+#source=(git+https://github.com/plapadoo/keepbooks.git)
+#md5sums=('SKIP')
+source=()
+md5sums=()
+build() {
+    cd keepbooks
+    runhaskell Setup configure -O --enable-executable-dynamic --disable-library-vanilla --prefix=/usr --docdir=/usr/share/doc/${pkgname} || return 1
+    runhaskell Setup build
+}
+
+package() {
+    cd keepbooks
+    runhaskell Setup copy --destdir=${pkgdir} || return 1
+    install -D -m644 LICENSE ${pkgdir}/usr/share/licenses/$pkgname/LICENSE || return 1
+    rm -f ${pkgdir}/usr/share/doc/${pkgname}/LICENSE
+}
