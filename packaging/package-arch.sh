@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-repo_file="/var/lib/plapadoo-arch-repo/repo.db.tar.gz"
+repo_file="/var/lib/plapadoo-arch-repo/custom.db.tar.gz"
 
 set -e
 shopt -s extglob
