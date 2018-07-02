@@ -1,8 +1,7 @@
 module Main where
 
 import           Control.Exception   (IOException, catch)
-import           Control.Monad       (Monad, filterM, join, liftM, mapM, return,
-                                      (>>=))
+import           Control.Monad       (Monad, filterM, join, liftM, mapM, (>>=))
 import           Data.Bool           (Bool, otherwise)
 import           Data.Char           (intToDigit)
 import           Data.Foldable       (foldMap)
@@ -29,17 +28,17 @@ import           System.Directory    (copyFile, createDirectory,
                                       listDirectory, removeDirectoryRecursive)
 import           Text.Read           (Read (..), read)
 
-import           Control.Applicative ((<*>))
+import           Control.Applicative (pure, (<*>))
 import           System.FilePath     (FilePath, (</>))
-import           System.IO           (IO, hSetEncoding, print, putStrLn, stderr,
-                                      stdout, utf8)
+import           System.IO           (IO, hPutStrLn, hSetEncoding, print,
+                                      putStrLn, stderr, stdout, utf8)
 import           System.Posix.Files  (setFileMode, setOwnerAndGroup,
                                       unionFileModes)
 import qualified System.Posix.Files  as PosixFiles
 import           System.Posix.Types  (FileMode)
 import           System.Posix.User   (getGroupEntryForName, getUserEntryForName,
                                       groupID, userID)
-import           Text.Show           (Show (..))
+import           Text.Show           (Show (..), show)
 
 {-
 Beschreibung des Programms:
@@ -220,7 +219,7 @@ removeOld (FsTarget target) lastMy =
       categoryRmOp cat = FsRemoveDir (target </> cat </> lastMyStr)
   in do
     cats <- dirsBelowJustName target
-    return (categoryRmOp <$> cats)
+    pure (categoryRmOp <$> cats)
 
 copyNew :: FsSource -> FsTarget -> [FilePath] -> MonthYear -> IO [FsOperation]
 copyNew (FsSource source) (FsTarget target) exclusions currentMy = do
@@ -237,19 +236,24 @@ copyNew (FsSource source) (FsTarget target) exclusions currentMy = do
             fileOp fn = FsCopy (copySource fn) (copyTarget fn)
         in do
            catFiles <- filesBelowJustName (source </> cat </> currentMyStr)
-           return $ mkdir : (fileOp <$> catFiles)
+           pure $ mkdir : (fileOp <$> catFiles)
   concatMapM categoryOp filteredCats
 
 copyAndMove :: Bool -> FsSource -> FsTarget -> [FilePath] -> MonthYear -> MonthYear -> IO [FsOperation]
 copyAndMove noDelete source target exclusions currentMy lastMy = do
   deleteOps <- if noDelete then mempty else removeOld target lastMy
   copyOps <- copyNew source target exclusions currentMy
-  return (copyOps <> deleteOps)
+  pure (copyOps <> deleteOps)
+
+putStrLnErr :: String -> IO ()
+putStrLnErr = hPutStrLn stderr
 
 listDirectoryIgnoreExns :: FilePath -> IO [FilePath]
 listDirectoryIgnoreExns fp =
   let errorHandler :: IOException -> IO [FilePath]
-      errorHandler _ = return []
+      errorHandler e = do
+          putStrLnErr ("Error listing directory " <> fp <> ": " <> show e)
+          pure []
   in listDirectory fp `catch` errorHandler
 
 filesAndDirsRecursive :: FilePath -> IO [FilePath]
@@ -258,7 +262,7 @@ filesAndDirsRecursive fp = do
   files <- filterM doesFileExist filesAndDirs
   dirs <- filterM doesDirectoryExist filesAndDirs
   recursion <- concatMapM filesAndDirsRecursive dirs
-  return (files <> dirs <> recursion)
+  pure (files <> dirs <> recursion)
 
 filesRecursive :: FilePath -> IO [FilePath]
 filesRecursive fp = filesAndDirsRecursive fp >>= filterM doesFileExist
@@ -270,7 +274,7 @@ adjustRights :: FsTarget -> FsGroup -> FsOwner -> IO [FsOperation]
 adjustRights (FsTarget target) group owner = do
   files <- filesRecursive target
   dirs <- dirsRecursive target
-  return $ (concatMap adjustDir dirs) <> (concatMap adjustFile files)
+  pure $ (concatMap adjustDir dirs) <> (concatMap adjustFile files)
   where dirM = ownerModes <> groupModes <> otherReadMode <> otherExecuteMode
         fileM = ownerReadMode <> ownerWriteMode <> groupReadMode <> groupWriteMode <> otherReadMode
         adjustDir dir = [FsChown dir group owner,FsChmod dir dirM]
@@ -279,13 +283,17 @@ adjustRights (FsTarget target) group owner = do
 createDirectoryIgnoreExns :: FilePath -> IO ()
 createDirectoryIgnoreExns fp =
   let errorHandler :: IOException -> IO ()
-      errorHandler _ = return ()
+      errorHandler e = do
+          putStrLnErr ("Error creating directory " <> fp <> ": " <> show e)
+          pure ()
   in createDirectory fp `catch` errorHandler
 
 removeDirectoryIgnoreExns :: FilePath -> IO ()
 removeDirectoryIgnoreExns fp =
   let errorHandler :: IOException -> IO ()
-      errorHandler _ = return ()
+      errorHandler e = do
+          putStrLnErr ("Error removing directory " <> fp <> ": " <> show e)
+          pure ()
   in removeDirectoryRecursive fp `catch` errorHandler
 
 interpretOperation :: FsOperation -> IO ()
