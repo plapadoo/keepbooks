@@ -2,8 +2,8 @@ build:
   stage: build
   script:
     - imagefile=$(nix-build dockerimage.nix)
-    - sudo docker rmi -f keepbooks:latest || true
-    - sudo docker load < $imagefile
-    - sudo docker tag keepbooks:latest $HOST_REGISTRY/keepbooks:latest
-    - sudo docker login -u $USER_REGISTRY -p $PW_REGISTRY $HOST_REGISTRY
-    - sudo docker push $HOST_REGISTRY/keepbooks:latest
+    - docker rmi -f keepbooks:latest || true
+    - docker load < $imagefile
+    - docker tag keepbooks:latest $HOST_REGISTRY/keepbooks:latest
+    - docker login -u $USER_REGISTRY -p $PW_REGISTRY $HOST_REGISTRY
+    - docker push $HOST_REGISTRY/keepbooks:latest
