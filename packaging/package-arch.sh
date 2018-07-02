@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-repo_file="/var/lib/plapadoo-arch-repo/custom.db.tar.gz"
+repo_path=/var/lib/plapadoo-arch-repo
+repo_file="$repo_path/custom.db.tar.gz"
+files_file="$repo_path/custom.files.tar.gz"
 
 set -e
 shopt -s extglob
@@ -11,3 +13,4 @@ cd packaging
 makepkg --noextract
 repo-add "$repo_file" ./*.xz
 scp "$repo_file" "cremaster:$repo_file"
+scp "$files_file" "cremaster:$files_file"
