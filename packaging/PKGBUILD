@@ -1,9 +1,9 @@
 # Contributor: Philipp Middendorf <middendorf@plapadoo.de>
 pkgname=keepbooks
-pkgrel=1
+pkgrel=2
 pkgver=1.0
-pkgdesc="Small, Unix-philosophy HTTP server"
-url="http://github.com/plapadoo/keepbooks"
+pkgdesc="Keep your books like a pro!"
+url="https://github.com/plapadoo/keepbooks#readme"
 license=('GPL3')
 arch=('x86_64')
 makedepends=()
