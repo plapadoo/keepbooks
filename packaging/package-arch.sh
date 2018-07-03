@@ -12,5 +12,7 @@ cp -R !(packaging) packaging/src/keepbooks
 cd packaging
 makepkg --noextract
 repo-add "$repo_file" ./*.xz
+cp ./*.xz "$repo_path"
 scp "$repo_file" "cremaster:$repo_file"
 scp "$files_file" "cremaster:$files_file"
+scp ./*.xz "cremaster:$repo_path"
