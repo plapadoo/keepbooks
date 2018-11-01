@@ -1,6 +1,6 @@
 # Contributor: Philipp Middendorf <middendorf@plapadoo.de>
 pkgname=keepbooks
-pkgrel=2
+pkgrel=3
 pkgver=1.0
 pkgdesc="Keep your books like a pro!"
 url="https://github.com/plapadoo/keepbooks#readme"
